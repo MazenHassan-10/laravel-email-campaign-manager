@@ -11,8 +11,16 @@ class Campaign extends Model
         'subject',
         'body',
         'status',
+        'audience_filters'
     ];
     
+    protected function casts() : array
+    {
+        return[
+            'audience_filters'=>'array',
+        ];
+    }
+
     public function leads() : BelongsToMany
     {
         return $this->belongsToMany(Lead::class , 'campaign_leads')
