@@ -39,7 +39,7 @@ class CampaignMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            text: $this->campaign->body,
+            htmlString: $this->campaign->body,
         );
     }
 

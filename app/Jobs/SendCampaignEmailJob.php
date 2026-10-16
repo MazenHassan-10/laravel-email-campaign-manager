@@ -17,10 +17,9 @@ class SendCampaignEmailJob implements ShouldQueue
     /**
      * Create a new job instance.
      */
-    public function __construct( public int $CampaignID , public int $LeadID )
-    {
+    public int $tries = 3;
 
-    }
+    public function __construct(public int $CampaignID, public int $LeadID) {}
 
     /**
      * Execute the job.
@@ -32,37 +31,63 @@ class SendCampaignEmailJob implements ShouldQueue
         $lead = Lead::findOrFail($this->LeadID);
 
         $recipientData = DB::table('campaign_leads')
-            ->where('campaign_id' , $this->CampaignID)
-            ->where('lead_id' , $this->LeadID)
-            ->first();
+            ->where('campaign_id', $this->CampaignID)
+            ->where('lead_id', $this->LeadID)->first();
 
-        if( !$recipientData || $recipientData->status === 'sent'){
+        if (!$recipientData || $recipientData->status === 'sent') {
             return;
         }
 
         $claimed = DB::table('campaign_leads')
-            ->where('campaign_id' , $this->CampaignID)
-            ->where('lead_id' , $this->LeadID)
-            ->where('status' , 'pending')
+            ->where('campaign_id', $this->CampaignID)
+            ->where('lead_id', $this->LeadID)
+            ->where('status', 'pending')
             ->update([
-                    'status' => 'processing',
-                    'updated_at' => now()
-                ]);
+                'status' => 'processing',
+                'attempts' => DB::raw('attempts + 1'),
+                'updated_at' => now()
+            ]);
 
-        if($claimed !== 1){
+        if ($claimed !== 1) {
             return;
         }
 
-        Mail::to($lead)->send(new CampaignMail($campaign));
+        try {
+            Mail::to($lead->email)->send(new CampaignMail($campaign));
 
-        DB::table('campaign_leads')
-            ->where('campaign_id' , $this->CampaignID)
-            ->where('lead_id' , $this->LeadID)
-            ->where('status' , 'processing')
+            DB::table('campaign_leads')
+            ->where('campaign_id', $this->CampaignID)
+            ->where('lead_id', $this->LeadID)->where('status', 'processing')
             ->update([
-                    'status' => 'sent',
-                    'sent_at' => now(),
-                    'updated_at' => now()
-                ]);
+                'status' => 'sent',
+                'sent_at' => now(),
+                'updated_at' => now()
+            ]);
+
+        } catch (\Throwable $th) {
+
+            DB::table('campaign_leads')
+            ->where('campaign_id', $this->CampaignID)
+            ->where('lead_id', $this->LeadID)
+            ->where('status', 'processing')
+            ->update([
+                'status' => 'pending',
+                'updated_at' => now()
+            ]);
+            throw $th;
+
+        }
+
+    }
+
+    public function failed(?\Throwable $exception) : void
+    {
+        DB::table('campaign_leads')
+            ->where('campaign_id', $this->CampaignID)
+            ->where('lead_id', $this->LeadID)
+            ->update([
+                'status' => 'failed',
+                'updated_at' => now(),
+            ]);
     }
 }
