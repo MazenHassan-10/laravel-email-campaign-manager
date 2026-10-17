@@ -17,6 +17,8 @@ class SendCampaignEmailJob implements ShouldQueue
     /**
      * Create a new job instance.
      */
+    public array $backoff = [30, 120];
+    public int $timeout = 60;
     public int $tries = 3;
 
     public function __construct(public int $CampaignID, public int $LeadID) {}
@@ -41,7 +43,16 @@ class SendCampaignEmailJob implements ShouldQueue
         $claimed = DB::table('campaign_leads')
             ->where('campaign_id', $this->CampaignID)
             ->where('lead_id', $this->LeadID)
-            ->where('status', 'pending')
+            ->where(function($query){
+
+                $query->where('status', 'pending');
+
+                if($this->attempts() > 1)
+                {
+                    $query->orWhere('status', 'processing');
+                }
+
+            })
             ->update([
                 'status' => 'processing',
                 'attempts' => DB::raw('attempts + 1'),
@@ -49,7 +60,7 @@ class SendCampaignEmailJob implements ShouldQueue
             ]);
 
         if ($claimed !== 1) {
-            return;
+           return;
         }
 
         try {
@@ -63,6 +74,8 @@ class SendCampaignEmailJob implements ShouldQueue
                 'sent_at' => now(),
                 'updated_at' => now()
             ]);
+
+            $campaign->refreshStatus();
 
         } catch (\Throwable $th) {
 
@@ -85,9 +98,12 @@ class SendCampaignEmailJob implements ShouldQueue
         DB::table('campaign_leads')
             ->where('campaign_id', $this->CampaignID)
             ->where('lead_id', $this->LeadID)
+            ->where('status' , '!=' , 'sent')
             ->update([
                 'status' => 'failed',
                 'updated_at' => now(),
             ]);
+
+        Campaign::find($this->CampaignID)?->refreshStatus();
     }
 }

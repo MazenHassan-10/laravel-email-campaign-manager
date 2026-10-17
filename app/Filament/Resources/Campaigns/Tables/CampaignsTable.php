@@ -34,29 +34,40 @@ class CampaignsTable
                     ->icon('heroicon-o-paper-airplane')
                     ->color('success')
                     ->requiresConfirmation()
+                    ->visible(fn (Campaign $record) => ! in_array($record->status , ['in_progress', 'completed', 'failed']))
                     ->action(function (Campaign $record) {
+
+                        $record->update(['status' => 'in_progress']);
+
                         $record->matchingLeadsQuery()
                             ->select('leads.id')
                             ->chunkById(500, function ($leads) use ($record) {
-                                foreach ($leads as $lead) {
-                                    $inserted = DB::table('campaign_leads')
-                                        ->insertOrIgnore([
+                                    DB::table('campaign_leads')->insertOrIgnore(
+                                        $leads->map(fn ($lead) =>[
                                             'campaign_id' => $record->id,
                                             'lead_id' => $lead->id,
                                             'status' => 'pending',
                                             'attempts' => 0,
                                             'created_at' => now(),
                                             'updated_at' => now(),
-                                        ]);
-                                    if ($inserted === 1) {
-                                        SendCampaignEmailJob::dispatch($record->id, $lead->id);
+                                        ])->all()
+                                    );
+                                });
+
+                            DB::table('campaign_leads')
+                                ->where('campaign_id' , $record->id)
+                                ->where('status', 'pending')
+                                ->orderBy('lead_id')
+                                ->chunkById(500 , function ($rows) use ($record) {
+                                    foreach($rows as $row)
+                                    {
+                                        SendCampaignEmailJob::dispatch($record->id , $row->lead_id);
                                     }
-                                }
-                            });
-                        $record->update([
-                            'status' => 'in_progress',
-                        ]);
-                    })
+                                });
+
+                            $record->refreshStatus();
+
+                        })
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

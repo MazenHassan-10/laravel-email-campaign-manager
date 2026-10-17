@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Facades\DB;
 
 class Campaign extends Model
 {
@@ -73,5 +74,25 @@ class Campaign extends Model
             }
 
         return $query;
+    }
+
+    public function refreshStatus() : void
+    {
+
+        $stillWorking = DB::table('campaign_leads')
+            ->where('campaign_id' ,$this->id)
+            ->whereIn('status', ['pending' , 'processing'])
+            ->exists();
+
+        if($stillWorking){
+            return;
+        }
+
+        $hasFailures = DB::table('campaign_leads')
+            ->where('campaign_id' ,$this->id)
+            ->where('status', 'failed')
+            ->exists();
+
+        $this->update(['status' => $hasFailures ? 'failed' : 'completed']);
     }
 }
