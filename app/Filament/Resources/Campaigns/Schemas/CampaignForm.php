@@ -21,9 +21,11 @@ class CampaignForm
                 Select::make('status')->label('Status')
                     ->options([
                         'pending' => 'Pending',
-                        'complete' => 'Complete',
+                        'completed' => 'Completed',
                         'in_progress' => 'In_progress',
+                        'failed' => 'Failed'
                     ])
+                    ->default('pending')
                     ->required(),
 
                 Section::make('Lead Filters')
