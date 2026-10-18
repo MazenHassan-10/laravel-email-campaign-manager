@@ -12,6 +12,10 @@ A Laravel + Filament admin panel for creating email campaigns, targeting a filte
 - **Safe retries**: each email is retried up to 3 times with a delay between attempts, and a lead is never emailed twice.
 - **Crash recovery**: if a worker dies mid-send, the retry picks the lead back up instead of leaving it stuck.
 
+
+https://github.com/user-attachments/assets/98a59f96-ae90-48f5-bc9e-5743178a07dc
+
+
 ## Tech Stack
 
 - PHP / Laravel
