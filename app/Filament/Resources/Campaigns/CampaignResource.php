@@ -5,6 +5,8 @@ namespace App\Filament\Resources\Campaigns;
 use App\Filament\Resources\Campaigns\Pages\CreateCampaign;
 use App\Filament\Resources\Campaigns\Pages\EditCampaign;
 use App\Filament\Resources\Campaigns\Pages\ListCampaigns;
+use App\Filament\Resources\Campaigns\Pages\ViewCampaign;
+use App\Filament\Resources\Campaigns\RelationManagers\LeadsRelationManager;
 use App\Filament\Resources\Campaigns\Schemas\CampaignForm;
 use App\Filament\Resources\Campaigns\Tables\CampaignsTable;
 use App\Models\Campaign;
@@ -35,7 +37,7 @@ class CampaignResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            LeadsRelationManager::class,
         ];
     }
 
@@ -44,6 +46,7 @@ class CampaignResource extends Resource
         return [
             'index' => ListCampaigns::route('/'),
             'create' => CreateCampaign::route('/create'),
+            'view' => ViewCampaign::route('/{record}'),
             'edit' => EditCampaign::route('/{record}/edit'),
         ];
     }

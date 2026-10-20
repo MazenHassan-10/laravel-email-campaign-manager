@@ -88,11 +88,6 @@ class Campaign extends Model
             return;
         }
 
-        $hasFailures = DB::table('campaign_leads')
-            ->where('campaign_id' ,$this->id)
-            ->where('status', 'failed')
-            ->exists();
-
-        $this->update(['status' => $hasFailures ? 'failed' : 'completed']);
+        $this->update(['status' => 'completed']);
     }
 }

@@ -98,7 +98,7 @@ class SendCampaignEmailJob implements ShouldQueue
         DB::table('campaign_leads')
             ->where('campaign_id', $this->CampaignID)
             ->where('lead_id', $this->LeadID)
-            ->where('status' , '!=' , 'sent')
+            ->whereIn('status' , ['pending', 'processing'])
             ->update([
                 'status' => 'failed',
                 'updated_at' => now(),
