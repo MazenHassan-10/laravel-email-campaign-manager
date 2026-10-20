@@ -1,5 +1,12 @@
 # Laravel Email Campaign Manager
 
+
+https://github.com/user-attachments/assets/b155530e-45e2-4720-bb3e-9ce79a0c6054
+
+
+
+
+
 A Laravel + Filament admin panel for creating email campaigns, targeting a filtered audience of leads, and sending the campaign in the background through a queue, with per-lead delivery tracking and automatic campaign status updates.
 
 ## Features
@@ -11,9 +18,6 @@ A Laravel + Filament admin panel for creating email campaigns, targeting a filte
 - **Automatic campaign status**: the campaign moves from `in_progress` to `completed` or `failed` on its own when the last recipient finishes.
 - **Safe retries**: each email is retried up to 3 times with a delay between attempts, and a lead is never emailed twice.
 - **Crash recovery**: if a worker dies mid-send, the retry picks the lead back up instead of leaving it stuck.
-
-
-https://github.com/user-attachments/assets/98a59f96-ae90-48f5-bc9e-5743178a07dc
 
 
 ## Tech Stack
